@@ -2,74 +2,64 @@ import streamlit as st
 import requests
 import json
 
+# إعداد الصفحة
 st.set_page_config(page_title="MRX MOOD", page_icon="🤖")
 
+# CSS المخصص للألوان والأشكال
 st.markdown("""
     <style>
+    /* تغيير لون خلفية التطبيق */
     .stApp { background-color: #000; color: #fff; }
+    
+    /* تنسيق رسائل المستخدم (أحمر) */
+    div[data-testid="stChatMessage"][data-author="user"] {
+        background-color: #8b0000 !important;
+        color: white !important;
+        border-radius: 10px;
+    }
+    
+    /* تنسيق رسائل المساعد (أبيض) */
+    div[data-testid="stChatMessage"][data-author="assistant"] {
+        background-color: #ffffff !important;
+        color: black !important;
+        border-radius: 10px;
+    }
+    
+    /* تنسيق صندوق الكود (أسود) */
+    pre {
+        background-color: #1c1c1c !important;
+        color: #ffffff !important;
+        border: 1px solid #ff0000 !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("MRX MOOD 🤖")
 
-# إدارة المحادثة في الذاكرة
+# تهيئة المحادثة
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض الرسائل السابقة
+# عرض المحادثة
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
+    # استخدام أيقونات مخصصة
+    avatar = "👤" if msg["role"] == "user" else "🤖"
+    with st.chat_message(msg["role"], avatar=avatar):
         st.markdown(msg["content"])
 
-# الدالة الخاصة بك (تم دمجها هنا)
-def send_message_to_api(messages):
-    try:
-        response = requests.post(
-            'https://chat-deep.ai/wp-json/dsc/v1/chat',
-            headers={
-                'Content-Type': 'application/json',
-                'X-Wp-Nonce': '3c9123ed3a', # مفتاحك السري
-                'User-Agent': 'Mozilla/5.0'
-            },
-            json={
-                "messages": messages,
-                "model": "deepseek-v4-flash",
-                "thinking": False
-            },
-            stream=True
-        )
-        
-        full_response = ""
-        for line in response.iter_lines():
-            if line:
-                line_str = line.decode('utf-8')
-                if line_str.startswith('data: '):
-                    data_str = line_str[6:]
-                    try:
-                        data = json.loads(data_str)
-                        if 'choices' in data:
-                            content = data['choices'][0].get('delta', {}).get('content', '')
-                            full_response += content
-                    except: pass
-        return full_response
-    except Exception as e:
-        return f"خطأ في الاتصال: {str(e)}"
-
-# حقل الإدخال
+# منطقة الإدخال
 if prompt := st.chat_input("اسأل مساعد MRX..."):
-    # إضافة رسالة المستخدم للتاريخ
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
 
-    # الحصول على الرد من الـ API
-    with st.chat_message("assistant"):
-        # رد مخصص للمطور
-        if "من صنعك" in prompt or "من مطورك" in prompt:
-            response = "أنا مساعد MRX، تم تطويري بواسطة المبرمج: ماجد حاكم الدراك."
+    with st.chat_message("assistant", avatar="🤖"):
+        # الرد المنطقي
+        if "من صنعك" in prompt:
+            response = "تم تطويري بواسطة ماجد حاكم الدراك."
         else:
-            response = send_message_to_api(st.session_state.messages)
+            # هنا تضع دالة الاتصال بالـ API الخاصة بك
+            response = "هذا مثال لكود:\n```python\nprint('Hello MRX')\n```"
         
-        # عرض الرد (الـ Markdown سيتعرف على الأكواد ويضيف زر النسخ تلقائياً)
         st.markdown(response)
         st.session_state.messages.append({"role": "assistant", "content": response})
