@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #050505; color: white; margin: 0; font-family: sans-serif; }
+        .glass { background: rgba(15, 15, 15, 0.95); border-left: 1px solid #333; }
+        .chat-container { height: calc(100vh - 120px); overflow-y: auto; padding: 20px; }
+        .input-box { border: 1px solid #444; background: #111; }
+        .btn-send { background: #8B0000; transition: 0.3s; }
+        .btn-send:hover { background: #ff0000; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <aside id="sidebar" class="w-72 glass p-4 flex flex-col absolute h-full z-50 transition-transform duration-300 -right-72">
+        <h1 class="text-xl font-bold mb-6 text-red-500">MRX MOOD</h1>
+        <button class="bg-neutral-800 w-full py-3 rounded-lg border border-neutral-700 text-sm mb-6">+ محادثة جديدة</button>
+        <div class="flex-1 text-neutral-500 text-sm">لا توجد محادثات سابقة</div>
+    </aside>
+
+    <main class="flex-1 flex flex-col relative">
+        <header class="p-4 flex items-center">
+            <button onclick="toggleSidebar()" class="p-2 border border-neutral-700 rounded-lg">
+                <svg width="24" height="24" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+        </header>
+
+        <div id="chatBox" class="chat-container flex-1 space-y-4">
+            <div class="text-center text-neutral-500 mt-20">كيف يمكنني مساعدتك اليوم؟</div>
+        </div>
+
+        <div class="p-4">
+            <div class="max-w-3xl mx-auto input-box rounded-2xl p-2 flex items-center">
+                <button class="p-3 text-neutral-400 hover:text-white">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+                <input type="text" id="userInput" class="flex-1 bg-transparent outline-none px-4 text-white" placeholder="اسأل أي شيء...">
+                <button onclick="sendMessage()" class="btn-send p-2 rounded-xl">
+                    <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-right-72');
+            sidebar.classList.toggle('right-0');
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const chatBox = document.getElementById('chatBox');
+            if (!input.value) return;
+
+            // إضافة رسالة المستخدم
+            chatBox.innerHTML += `<div class="bg-red-900 p-3 rounded-lg self-end">${input.value}</div>`;
+            
+            // إرسال للرابط
+            const response = await fetch('$$$$$$', {
+                method: 'POST',
+                body: JSON.stringify({ message: input.value })
+            });
+            const data = await response.text();
+            
+            // إضافة رد المساعد
+            chatBox.innerHTML += `<div class="bg-neutral-800 p-3 rounded-lg">${data}</div>`;
+            input.value = '';
+        }
+    </script>
+</body>
+</html>
+
