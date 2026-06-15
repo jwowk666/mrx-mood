@@ -3,61 +3,51 @@ import streamlit as st
 # إعدادات الصفحة
 st.set_page_config(page_title="MRX MOOD", page_icon="💀", layout="centered")
 
-# CSS المخصص للهوية (الأسود، الأحمر، والأيقونات)
+# CSS المحدث (كل شيء أسود وأحمر فخم)
 st.markdown("""
     <style>
-    /* خلفية التطبيق سوداء بالكامل */
-    .stApp {background-color: #000000; color: #ffffff;}
+    .stApp {background-color: #000000;}
     
-    /* صندوق الكتابة (الذي طلبت مثله) */
-    .input-box {
-        background-color: #1a1a1a;
-        border: 2px solid #ff0000;
-        border-radius: 20px;
-        padding: 10px;
-        color: white;
+    /* تنسيق مربع الكتابة */
+    .stTextInput > div > div > input {
+        background-color: #1a1a1a !important;
+        color: white !important;
+        border: 2px solid #ff0000 !important;
+        border-radius: 20px !important;
+        padding: 15px !important;
     }
     
-    /* تنسيق الرسالة (التي طلبتها باللون الأحمر) */
-    .mrx-message {
-        background-color: #2b0000;
-        border: 1px solid #ff0000;
-        border-radius: 15px;
-        padding: 15px;
-        color: #ff4d4d; /* كلام MRX أحمر */
+    /* زر الإرسال الفخم */
+    div.stButton > button {
+        background-color: #ff0000 !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 50px !important;
+        height: 50px !important;
+        border: none !important;
+        font-size: 20px !important;
     }
     
-    /* تنسيق أزرار الإجراءات (نسخ، قراءة) */
-    .action-btn {
-        background-color: #330000;
-        color: #ff0000;
-        border: 1px solid #ff0000;
-        border-radius: 10px;
-        padding: 5px 10px;
-        margin-right: 10px;
-    }
+    .mrx-text {color: #ff0000; font-weight: bold;}
     </style>
     """, unsafe_allow_html=True)
 
-# 1. الجزء العلوي (صورة الجيميل في الدائرة الصفراء + شعار MRX في الدائرة الزرقاء)
-col1, col2 = st.columns([1, 6])
+# الجزء العلوي
+col1, col2 = st.columns([1, 10])
 with col1:
-    st.image("https://cdn-icons-png.flaticon.com/512/281/281769.png", width=50) # مكان صورة الجيميل
+    st.image("https://cdn-icons-png.flaticon.com/512/281/281769.png", width=40) # دائرة الشخص
 with col2:
-    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712120.png", width=50) # شعار MRX MOOD
+    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712120.png", width=40) # شعار MRX
 
-# 2. منطقة عرض الإجابة (الخط الأحمر الكبير)
-st.markdown("<hr style='border: 2px solid red;'>", unsafe_allow_html=True)
-st.markdown("<div class='mrx-message'>هنا ستظهر إجابة MRX MOOD باللون الأحمر الفخم...</div>", unsafe_allow_html=True)
+# منطقة الرد (تظهر بلون أحمر)
+st.markdown("<p class='mrx-text'>MRX MOOD: جاهز للسيطرة...</p>", unsafe_allow_html=True)
 
-# 3. أزرار التحكم (نسخ + قراءة)
-st.markdown("""
-    <div style='margin-top: 10px;'>
-        <button class='action-btn'>قراءة صوتية</button>
-        <button class='action-btn'>نسخ الإجابة</button>
-    </div>
-""", unsafe_allow_html=True)
+# منطقة الكتابة (مربع + زر إرسال بجانبه)
+c1, c2 = st.columns([9, 1])
+with c1:
+    user_input = st.text_input("", placeholder="اسأل MRX MOOD أو ابدأ بكلمة 'تخيل'...")
+with c2:
+    send_btn = st.button("⬆") # هذا هو زر الإرسال
 
-# 4. صندوق الكتابة (تحت)
-st.markdown("<br><br>", unsafe_allow_html=True)
-user_input = st.text_input("", placeholder="اسأل MRX MOOD أو ابدأ بكلمة 'تخيل' لتوليد...", label_visibility="collapsed")
+if send_btn:
+    st.write(f"أنت كتبت: {user_input}") # هنا ستظهر إجابة الذكاء الاصطناعي لاحقاً
