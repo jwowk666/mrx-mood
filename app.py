@@ -1,74 +1,86 @@
 import streamlit as st
 import requests
 import json
+import re
 
-# 1. إعداد الصفحة
-st.set_page_config(page_title="MRX MOOD", page_icon="🤖")
+# إعداد الصفحة
+st.set_page_config(page_title="MRX MOOD", page_icon="🤖", layout="centered")
 
-# 2. تصميم الألوان (CSS)
+# CSS للتصميم المظلم (الأسود والأحمر)
 st.markdown("""
     <style>
     .stApp { background-color: #000; color: #fff; }
-    /* رسائل المستخدم: أحمر */
-    div[data-testid="stChatMessage"][data-author="user"] { background-color: #8B0000 !important; color: white !important; }
-    /* رسائل المساعد: أبيض */
-    div[data-testid="stChatMessage"][data-author="assistant"] { background-color: #FFFFFF !important; color: black !important; }
-    /* مربعات الكود: أسود */
-    pre { background-color: #111 !important; color: #fff !important; border: 1px solid #ff0000 !important; }
+    .msg { padding: 15px; border-radius: 20px; margin: 10px 0; max-width: 80%; }
+    .user-msg { background: linear-gradient(to left, #ff0000, #800); color: white; margin-left: auto; }
+    .mrx-msg { background: #151515; border: 1px solid #333; color: #fff; }
     </style>
 """, unsafe_allow_html=True)
 
+# العنوان الجانبي
+with st.sidebar:
+    st.markdown("### رياض صادق")
+    st.caption("ryadsadq806@gmail.com")
+    st.divider()
+    st.info("مطور بواسطة: ماجد حاكم الدراك")
+
 st.title("MRX MOOD 🤖")
 
-# 3. إدارة المحادثة
+# تهيئة سجل المحادثة
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [{"role": "assistant", "content": "مرحباً بك، كيف يمكنني مساعدتك اليوم؟"}]
 
+# عرض الرسائل
 for msg in st.session_state.messages:
-    avatar = "👤" if msg["role"] == "user" else "🤖"
-    with st.chat_message(msg["role"], avatar=avatar):
-        st.markdown(msg["content"])
+    css_class = "user-msg" if msg["role"] == "user" else "mrx-msg"
+    st.markdown(f'<div class="msg {css_class}">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# 4. دالة الاتصال بالـ API (المحرك الحقيقي)
-def get_ai_response(prompt):
-    url = 'https://chat-deep.ai/wp-json/dsc/v1/chat'
-    headers = {
-        'Content-Type': 'application/json',
-        'X-Wp-Nonce': '3c9123ed3a'
-    }
-    data = {
-        "messages": [{"role": "user", "content": prompt}],
-        "model": "deepseek-v4-flash",
-        "thinking": False
-    }
+# دالة الاتصال والتنقية (السر هنا)
+def get_clean_response(user_input):
     try:
-        response = requests.post(url, headers=headers, json=data, stream=True)
+        s = requests.Session()
+        r = s.get("https://deep-seek.ai", headers={'User-Agent': 'Mozilla/5.0'})
+        c1 = s.cookies.get('XSRF-TOKEN')
+        c2 = re.search(r'csrf-token["\s]+content=["\']([^"\']+)', r.text).group(1)
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': c2,
+            'Cookie': f'XSRF-TOKEN={c1}',
+            'X-Developer': '@HackerExos'
+        }
+        
+        payload = {
+            "model": "deepseek/deepseek-v3.2",
+            "messages": [{"role": "user", "content": user_input}],
+            "stream": True
+        }
+        
+        res = s.post("https://deep-seek.ai/api/chat", headers=headers, json=payload, stream=True)
+        
         full_text = ""
-        for line in response.iter_lines():
+        for line in res.iter_lines():
             if line:
                 decoded = line.decode('utf-8')
                 if decoded.startswith('data: '):
+                    content = decoded[6:]
+                    if content == '[DONE]': break
                     try:
-                        json_data = json.loads(decoded[6:])
-                        if 'choices' in json_data:
-                            full_text += json_data['choices'][0].get('delta', {}).get('content', '')
-                    except: pass
-        return full_text if full_text else "عذراً، لم أستطع الرد."
+                        data = json.loads(content)
+                        if 'choices' in data:
+                            full_text += data['choices'][0]['delta'].get('content', '')
+                    except: continue
+        return full_text if full_text else "عذراً، لم أستطع استخراج الرد."
     except Exception as e:
-        return "خطأ في الاتصال بالخادم."
+        return "حدث خطأ في الاتصال بالسيرفر."
 
-# 5. منطق الإدخال
+# حقل الإدخال
 if prompt := st.chat_input("اسأل مساعد MRX..."):
+    # إضافة رسالة المستخدم
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar="👤"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant", avatar="🤖"):
-        # الرد المخصص للمطور
-        if "من صنعك" in prompt or "من مطورك" in prompt:
-            response = "أنا مساعد MRX، تم تطويري بواسطة المبرمج: ماجد حاكم الدراك."
-        else:
-            response = get_ai_response(prompt)
-        
-        st.markdown(response)
+    
+    # الحصول على الرد النظيف
+    with st.spinner("جارٍ المعالجة..."):
+        response = get_clean_response(prompt)
         st.session_state.messages.append({"role": "assistant", "content": response})
+    
+    st.rerun()
