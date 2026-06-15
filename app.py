@@ -34,44 +34,43 @@ for msg in st.session_state.messages:
     css_class = "user-msg" if msg["role"] == "user" else "mrx-msg"
     st.markdown(f'<div class="msg {css_class}">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# دالة الاتصال والتنقية (السر هنا)
+# ===================== التعديل الأساسي هنا فقط =====================
+# مفتاح API الخاص بك (يجب أن تحصل عليه من deepseek.com)
+DEEPSEEK_API_KEY = "sk-your-api-key-here"  # ⚠️ استبدل هذا بمفتاحك الحقيقي
+
 def get_clean_response(user_input):
+    """دالة معدلة لاستخدام API الرسمي بدلاً من الاختراق"""
     try:
-        s = requests.Session()
-        r = s.get("https://deep-seek.ai", headers={'User-Agent': 'Mozilla/5.0'})
-        c1 = s.cookies.get('XSRF-TOKEN')
-        c2 = re.search(r'csrf-token["\s]+content=["\']([^"\']+)', r.text).group(1)
+        url = "https://api.deepseek.com/v1/chat/completions"
         
         headers = {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': c2,
-            'Cookie': f'XSRF-TOKEN={c1}',
-            'X-Developer': '@HackerExos'
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+            "Content-Type": "application/json"
         }
         
+        # نرسل فقط الرسالة الحالية (للبساطة)
         payload = {
-            "model": "deepseek/deepseek-v3.2",
-            "messages": [{"role": "user", "content": user_input}],
-            "stream": True
+            "model": "deepseek-chat",
+            "messages": [
+                {"role": "user", "content": user_input}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 2000,
+            "stream": False  # تبسيط: غير متدفق (غير stream)
         }
         
-        res = s.post("https://deep-seek.ai/api/chat", headers=headers, json=payload, stream=True)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         
-        full_text = ""
-        for line in res.iter_lines():
-            if line:
-                decoded = line.decode('utf-8')
-                if decoded.startswith('data: '):
-                    content = decoded[6:]
-                    if content == '[DONE]': break
-                    try:
-                        data = json.loads(content)
-                        if 'choices' in data:
-                            full_text += data['choices'][0]['delta'].get('content', '')
-                    except: continue
-        return full_text if full_text else "عذراً، لم أستطع استخراج الرد."
+        if response.status_code == 200:
+            data = response.json()
+            return data['choices'][0]['message']['content']
+        else:
+            return f"⚠️ خطأ: {response.status_code} - {response.text}"
+            
     except Exception as e:
-        return "حدث خطأ في الاتصال بالسيرفر."
+        return f"❌ حدث خطأ في الاتصال: {str(e)}"
+
+# ===================== نهاية التعديل =====================
 
 # حقل الإدخال
 if prompt := st.chat_input("اسأل مساعد MRX..."):
