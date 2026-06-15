@@ -1,53 +1,70 @@
 import streamlit as st
 
 # إعدادات الصفحة
-st.set_page_config(page_title="MRX MOOD", page_icon="💀", layout="centered")
+st.set_page_config(page_title="مساعد MRX", layout="wide")
 
-# CSS المحدث (كل شيء أسود وأحمر فخم)
+# تصميم CSS ليكون مطابقاً للصورة تماماً (مربع أسود سفلي)
 st.markdown("""
     <style>
     .stApp {background-color: #000000;}
     
+    /* الحاوية السفلية (المربع الأسود) */
+    .chat-container {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        background-color: #1a1a1a;
+        border-radius: 25px;
+        padding: 15px;
+        border: 1px solid #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
     /* تنسيق مربع الكتابة */
     .stTextInput > div > div > input {
-        background-color: #1a1a1a !important;
+        background-color: transparent !important;
         color: white !important;
-        border: 2px solid #ff0000 !important;
-        border-radius: 20px !important;
-        padding: 15px !important;
-    }
-    
-    /* زر الإرسال الفخم */
-    div.stButton > button {
-        background-color: #ff0000 !important;
-        color: white !important;
-        border-radius: 50% !important;
-        width: 50px !important;
-        height: 50px !important;
         border: none !important;
-        font-size: 20px !important;
     }
     
-    .mrx-text {color: #ff0000; font-weight: bold;}
+    /* زر الإرسال الدائري */
+    .send-btn {
+        background-color: #333 !important;
+        border-radius: 50% !important;
+        color: white !important;
+    }
+    
+    .title-text {
+        text-align: center;
+        color: #ff0000;
+        font-family: sans-serif;
+        font-weight: bold;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# الجزء العلوي
-col1, col2 = st.columns([1, 10])
+# العنوان
+st.markdown("<h2 class='title-text'>مساعد MRX</h2>", unsafe_allow_html=True)
+
+# الحاوية السفلية (المربع الأسود المطابق للصورة)
+st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
+
+# محتويات المربع السفلي
+col1, col2, col3, col4, col5 = st.columns([0.5, 8, 1, 1, 1])
+
 with col1:
-    st.image("https://cdn-icons-png.flaticon.com/512/281/281769.png", width=40) # دائرة الشخص
+    st.button("➕") # زر الإضافة
 with col2:
-    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712120.png", width=40) # شعار MRX
+    user_input = st.text_input("", placeholder="اسأل مساعد MRX أو ابدأ بكلمة 'تخيل' لتوليد...", label_visibility="collapsed")
+with col3:
+    st.button("⬆") # زر الإرسال
+with col4:
+    st.button("🎙️") # زر الصوت
+with col5:
+    st.button("🖼️") # زر الصور
 
-# منطقة الرد (تظهر بلون أحمر)
-st.markdown("<p class='mrx-text'>MRX MOOD: جاهز للسيطرة...</p>", unsafe_allow_html=True)
-
-# منطقة الكتابة (مربع + زر إرسال بجانبه)
-c1, c2 = st.columns([9, 1])
-with c1:
-    user_input = st.text_input("", placeholder="اسأل MRX MOOD أو ابدأ بكلمة 'تخيل'...")
-with c2:
-    send_btn = st.button("⬆") # هذا هو زر الإرسال
-
-if send_btn:
-    st.write(f"أنت كتبت: {user_input}") # هنا ستظهر إجابة الذكاء الاصطناعي لاحقاً
+st.markdown("</div>", unsafe_allow_html=True)
