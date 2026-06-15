@@ -1,14 +1,20 @@
 import streamlit as st
 import requests
 import json
+import base64
 
-st.set_page_config(page_title="MRX MOOD", layout="centered")
+# إعداد الصفحة لتكون بوضع "الوضع المظلم" وبشكل فخم
+st.set_page_config(page_title="MRX MOOD", page_icon="🤖", layout="centered")
 
-# CSS للفخامة
+# CSS لتغيير شكل التطبيق ليصبح فخماً جداً (أسود وأحمر)
 st.markdown("""
     <style>
     .stApp { background-color: #000; }
-    .stChatMessage { background: #151515 !important; border: 1px solid #ff0000; }
+    .main { background-color: #000; }
+    /* تنسيق صندوق المحادثة */
+    .stChatMessage { background: #151515 !important; border: 1px solid #ff0000; border-radius: 15px; }
+    /* تنسيق زر الإرسال */
+    div[data-testid="stChatInput"] { border: 2px solid #ff0000; border-radius: 20px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -19,36 +25,35 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    email = st.text_input("أدخل البريد الإلكتروني للدخول:")
-    if st.button("دخول"):
-        st.session_state.logged_in = True
-        st.rerun()
+    with st.container():
+        email = st.text_input("أدخل البريد الإلكتروني للبدء:")
+        if st.button("دخول"):
+            st.session_state.logged_in = True
+            st.rerun()
     st.stop()
 
-# 2. رفع الملفات والصور
-uploaded_file = st.file_uploader("ارفع صورة أو ملف ليحللها المساعد", type=['png', 'jpg', 'pdf'])
+# 2. منطقة رفع الملفات (فوق المحادثة)
+uploaded_file = st.file_uploader("📂 ارفع ملف أو صورة لتحليلها", type=['png', 'jpg', 'pdf'])
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض المحادثة
+# عرض الرسائل
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# دالة تنقية النص من أكواد OPENROUTER
-def clean_response(response_text):
-    full_text = ""
-    for line in response_text.splitlines():
+# دالة ذكية لتنقية الرد (إزالة بيانات الـ OpenRouter)
+def parse_response(raw_text):
+    clean_text = ""
+    for line in raw_text.splitlines():
         if line.startswith("data: "):
-            content = line[6:]
-            if content == "[DONE]": break
             try:
-                data = json.loads(content)
-                text = data['choices'][0]['delta'].get('content', '')
-                full_text += text
-            except: pass
-    return full_text if full_text else "عذراً، لم أستطع قراءة الرد."
+                data = json.loads(line[6:])
+                if 'choices' in data:
+                    clean_text += data['choices'][0]['delta'].get('content', '')
+            except: continue
+    return clean_text if clean_text else "عذراً، لم أستطع استخراج الرد."
 
 # الإدخال
 if prompt := st.chat_input("اسأل مساعد MRX..."):
@@ -56,11 +61,14 @@ if prompt := st.chat_input("اسأل مساعد MRX..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # هنا يتم الاتصال
     with st.chat_message("assistant"):
-        # محاكاة إرسال للـ API (يجب وضع منطق الـ Session الخاص بك هنا)
-        # بعد استلام الرد الخام من res.text:
-        raw_data = "..." # ضع هنا res.text القادم من الـ API
-        clean_text = clean_response(raw_data)
-        st.markdown(clean_text)
-        st.session_state.messages.append({"role": "assistant", "content": clean_text})
+        # هنا يتم ربط كود الـ API الخاص بك
+        # يجب تمرير 'prompt' للـ API واستلام الرد في res_text
+        res_text = "..." # ضع هنا نتيجة الـ API الحقيقية
+        
+        # التنقية
+        final_answer = parse_response(res_text)
+        
+        # العرض مع زر نسخ (Streamlit يضيفه تلقائياً)
+        st.markdown(final_answer)
+        st.session_state.messages.append({"role": "assistant", "content": final_answer})
