@@ -1,86 +1,47 @@
 import streamlit as st
 import requests
-import json
-import re
 
-# إعداد الصفحة
-st.set_page_config(page_title="MRX MOOD", page_icon="🤖", layout="centered")
+# [إعدادات الصفحة والـ CSS هنا]
+st.set_page_config(page_title="MRX MOOD", layout="centered")
 
-# CSS للتصميم المظلم (الأسود والأحمر)
 st.markdown("""
     <style>
     .stApp { background-color: #000; color: #fff; }
-    .msg { padding: 15px; border-radius: 20px; margin: 10px 0; max-width: 80%; }
-    .user-msg { background: linear-gradient(to left, #ff0000, #800); color: white; margin-left: auto; }
-    .mrx-msg { background: #151515; border: 1px solid #333; color: #fff; }
+    /* تنسيق زر الإدخال */
+    div[data-testid="stChatInput"] { border: 1px solid #ff0000; border-radius: 20px; }
     </style>
 """, unsafe_allow_html=True)
 
-# العنوان الجانبي
-with st.sidebar:
-    st.markdown("### رياض صادق")
-    st.caption("ryadsadq806@gmail.com")
-    st.divider()
-    st.info("مطور بواسطة: ماجد حاكم الدراك")
-
 st.title("MRX MOOD 🤖")
 
-# تهيئة سجل المحادثة
+# عرض المحادثة
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "مرحباً بك، كيف يمكنني مساعدتك اليوم؟"}]
+    st.session_state.messages = []
 
-# عرض الرسائل
 for msg in st.session_state.messages:
-    css_class = "user-msg" if msg["role"] == "user" else "mrx-msg"
-    st.markdown(f'<div class="msg {css_class}">{msg["content"]}</div>', unsafe_allow_html=True)
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-# دالة الاتصال والتنقية (السر هنا)
-def get_clean_response(user_input):
-    try:
-        s = requests.Session()
-        r = s.get("https://deep-seek.ai", headers={'User-Agent': 'Mozilla/5.0'})
-        c1 = s.cookies.get('XSRF-TOKEN')
-        c2 = re.search(r'csrf-token["\s]+content=["\']([^"\']+)', r.text).group(1)
-        
-        headers = {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': c2,
-            'Cookie': f'XSRF-TOKEN={c1}',
-            'X-Developer': '@HackerExos'
-        }
-        
-        payload = {
-            "model": "deepseek/deepseek-v3.2",
-            "messages": [{"role": "user", "content": user_input}],
-            "stream": True
-        }
-        
-        res = s.post("https://deep-seek.ai/api/chat", headers=headers, json=payload, stream=True)
-        
-        full_text = ""
-        for line in res.iter_lines():
-            if line:
-                decoded = line.decode('utf-8')
-                if decoded.startswith('data: '):
-                    content = decoded[6:]
-                    if content == '[DONE]': break
-                    try:
-                        data = json.loads(content)
-                        if 'choices' in data:
-                            full_text += data['choices'][0]['delta'].get('content', '')
-                    except: continue
-        return full_text if full_text else "عذراً، لم أستطع استخراج الرد."
-    except Exception as e:
-        return "حدث خطأ في الاتصال بالسيرفر."
+# --- منطقة الإدخال المطورة ---
+# نضع زر "+" والقائمة المنسدلة في نفس سطر الإدخال
+col1, col2 = st.columns([0.1, 0.9])
 
-# حقل الإدخال
-if prompt := st.chat_input("اسأل مساعد MRX..."):
-    # إضافة رسالة المستخدم
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # الحصول على الرد النظيف
-    with st.spinner("جارٍ المعالجة..."):
-        response = get_clean_response(prompt)
-        st.session_state.messages.append({"role": "assistant", "content": response})
-    
-    st.rerun()
+with col1:
+    # إنشاء القائمة المنسدلة (Popover)
+    with st.popover("➕"):
+        st.write("📂 **المعرض**")
+        st.write("📷 **الكاميرا**")
+        st.write("📎 **ملفات**")
+        st.write("📚 **المجموعات**")
+        st.write("🎨 **إنشاء صورة**")
+        st.write("🔭 **بحث معمق**")
+
+with col2:
+    # حقل الإدخال
+    prompt = st.text_input("", placeholder="اسأل مساعد MRX...", key="input")
+
+if st.button("إرسال"):
+    if prompt:
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        # [منطق الاتصال بالـ API يوضع هنا]
+        st.rerun()
