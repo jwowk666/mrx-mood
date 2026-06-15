@@ -1,50 +1,52 @@
 import streamlit as st
 import requests
 
-# 1. إعداد الصفحة
-st.set_page_config(page_title="MRX MOOD", page_icon="🤖")
+# إعداد الصفحة
+st.set_page_config(page_title="MRX MOOD", layout="centered")
 
-# 2. تنسيق الألوان (أسود وأحمر)
+# CSS لإعطاء طابع "فخم" وتأثيرات حمراء
 st.markdown("""
     <style>
-    .stApp { background-color: #000; color: #fff; }
-    div[data-testid="stButton"] button { background-color: #ff0000; color: white; border: none; }
+    .stApp { background-color: #000; }
+    .msg-box { background: #151515; border: 1px solid #ff0000; border-radius: 10px; padding: 15px; margin: 10px 0; color: #fff; }
+    .code-box { background: #000 !important; border: 1px solid #ff0000 !important; }
+    div[data-testid="stChatMessage"] { background-color: #000 !important; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("MRX MOOD 🤖")
+# 1. نظام تسجيل الدخول البسيط
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-# 3. تخزين الرسائل
+if not st.session_state.logged_in:
+    st.title("🔐 تسجيل الدخول إلى MRX")
+    email = st.text_input("أدخل البريد الإلكتروني:")
+    if st.button("دخول"):
+        if email:
+            st.session_state.logged_in = True
+            st.rerun()
+    st.stop()
+
+# 2. الواجهة الرئيسية
+st.title("MRX MOOD")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 4. عرض المحادثة
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
-
-# 5. حقل الإدخال (تم تغييره ليكون متوافقاً تماماً)
-prompt = st.text_input("اكتب رسالتك هنا...", key="input_text")
-
-if st.button("إرسال"):
-    if prompt:
-        # إضافة رسالة المستخدم
-        st.session_state.messages.append({"role": "user", "content": prompt})
+# عرض الرسائل
+for i, msg in enumerate(st.session_state.messages):
+    with st.chat_message("assistant" if msg["role"] == "assistant" else "user"):
+        st.markdown(msg["content"])
         
-        # الاتصال بالـ API
-        try:
-            response = requests.post(
-                "https://zailtqlrdcukgythlbwq.supabase.co/functions/v1/exos",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer exos_7d73425a42b9ebdbca982f04f84d0f267c2f720cf478a28c"
-                },
-                json={"message": prompt, "model": "deepseek-ai/DeepSeek-V3.1"}
-            )
-            answer = response.text if response.status_code == 200 else "خطأ في الاتصال."
-        except:
-            answer = "تعذر الوصول للخادم."
-        
-        # إضافة رد المساعد
-        st.session_state.messages.append({"role": "assistant", "content": answer})
-        st.rerun()
+        # إذا كانت رسالة من المساعد، أضف زر النسخ
+        if msg["role"] == "assistant":
+            st.button(f"نسخ الإجابة {i}", key=f"copy_{i}")
+
+# حقل الإدخال
+if prompt := st.chat_input("اسأل مساعد MRX..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    # هنا محاكاة للرد (استبدل هذا بمنطق الـ API الخاص بك)
+    response = "هذا مثال لكود برمجي:\n\n```python\nprint('Hello MRX')\n```"
+    st.session_state.messages.append({"role": "assistant", "content": response})
+    st.rerun()
