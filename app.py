@@ -1,74 +1,59 @@
 import streamlit as st
 import requests
-import json
-import base64
 
-# إعداد الصفحة لتكون بوضع "الوضع المظلم" وبشكل فخم
-st.set_page_config(page_title="MRX MOOD", page_icon="🤖", layout="centered")
-
-# CSS لتغيير شكل التطبيق ليصبح فخماً جداً (أسود وأحمر)
+# 1. إعداد الصفحة وتصميمها (CSS)
+st.set_page_config(page_title="MRX MOOD", layout="wide")
 st.markdown("""
     <style>
-    .stApp { background-color: #000; }
-    .main { background-color: #000; }
-    /* تنسيق صندوق المحادثة */
-    .stChatMessage { background: #151515 !important; border: 1px solid #ff0000; border-radius: 15px; }
-    /* تنسيق زر الإرسال */
-    div[data-testid="stChatInput"] { border: 2px solid #ff0000; border-radius: 20px; }
+    .stApp { background-color: #000; color: #fff; }
+    /* تصميم المحادثة */
+    .user-msg { background: linear-gradient(to left, #ff0000, #800); padding: 15px; border-radius: 20px; margin: 10px 0; align-self: flex-start; }
+    .mrx-msg { background: #151515; border: 1px solid #333; padding: 15px; border-radius: 20px; margin: 10px 0; align-self: flex-end; }
+    /* إخفاء شعار ستريم ليت */
+    #MainMenu, footer, header { visibility: hidden; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("MRX MOOD 🤖")
+# 2. القائمة الجانبية (Sidebar)
+with st.sidebar:
+    st.markdown("### رياض صادق")
+    st.caption("ryadsadq806@gmail.com")
+    st.divider()
+    st.write("مطور بواسطة: ماجد حاكم الدراك")
 
-# 1. نظام الدخول
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
-if not st.session_state.logged_in:
-    with st.container():
-        email = st.text_input("أدخل البريد الإلكتروني للبدء:")
-        if st.button("دخول"):
-            st.session_state.logged_in = True
-            st.rerun()
-    st.stop()
-
-# 2. منطقة رفع الملفات (فوق المحادثة)
-uploaded_file = st.file_uploader("📂 ارفع ملف أو صورة لتحليلها", type=['png', 'jpg', 'pdf'])
-
+# 3. عرض المحادثة
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [{"role": "assistant", "content": "مرحباً بك، كيف يمكنني مساعدتك اليوم؟"}]
 
-# عرض الرسائل
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# دالة ذكية لتنقية الرد (إزالة بيانات الـ OpenRouter)
-def parse_response(raw_text):
-    clean_text = ""
-    for line in raw_text.splitlines():
-        if line.startswith("data: "):
-            try:
-                data = json.loads(line[6:])
-                if 'choices' in data:
-                    clean_text += data['choices'][0]['delta'].get('content', '')
-            except: continue
-    return clean_text if clean_text else "عذراً، لم أستطع استخراج الرد."
-
-# الإدخال
+# 4. منطقة الإدخال (بدون ملفات أو صور)
 if prompt := st.chat_input("اسأل مساعد MRX..."):
+    # إضافة رسالة المستخدم
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # الرد من الخادم (الـ API الخاص بك)
     with st.chat_message("assistant"):
-        # هنا يتم ربط كود الـ API الخاص بك
-        # يجب تمرير 'prompt' للـ API واستلام الرد في res_text
-        res_text = "..." # ضع هنا نتيجة الـ API الحقيقية
-        
-        # التنقية
-        final_answer = parse_response(res_text)
-        
-        # العرض مع زر نسخ (Streamlit يضيفه تلقائياً)
-        st.markdown(final_answer)
-        st.session_state.messages.append({"role": "assistant", "content": final_answer})
+        with st.spinner("جاري التفكير..."):
+            try:
+                response = requests.post(
+                    "https://zailtqlrdcukgythlbwq.supabase.co/functions/v1/exos",
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer exos_7d73425a42b9ebdbca982f04f84d0f267c2f720cf478a28c"
+                    },
+                    json={
+                        "message": prompt,
+                        "model": "deepseek-ai/DeepSeek-V3.1"
+                    }
+                )
+                answer = response.text if response.status_code == 200 else "حدث خطأ في الاتصال."
+            except:
+                answer = "عذراً، الخادم لا يستجيب حالياً."
+            
+            st.markdown(answer)
+            st.session_state.messages.append({"role": "assistant", "content": answer})
