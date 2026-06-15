@@ -1,38 +1,34 @@
 import streamlit as st
 import requests
 
-# إعداد الصفحة
-st.set_page_config(page_title="MRX MOOD", layout="wide")
+# 1. إعداد الصفحة
+st.set_page_config(page_title="MRX MOOD", page_icon="🤖")
 
-# CSS للتصميم الفخم (أسود وأحمر)
+# 2. تنسيق الألوان (أسود وأحمر)
 st.markdown("""
     <style>
     .stApp { background-color: #000; color: #fff; }
-    .stTextInput>div>div>input { background-color: #151515 !important; color: white !important; border: 1px solid #ff0000 !important; }
+    div[data-testid="stButton"] button { background-color: #ff0000; color: white; border: none; }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("MRX MOOD 🤖")
 
-# القائمة الجانبية
-with st.sidebar:
-    st.markdown("### رياض صادق")
-    st.write("مطور بواسطة: ماجد حاكم الدراك")
-
-# إدارة المحادثة
+# 3. تخزين الرسائل
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# عرض الرسائل القديمة
+# 4. عرض المحادثة
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        st.write(msg["content"])
 
-# استخدام text_input بدلاً من chat_input لتجنب الخطأ
-prompt = st.text_input("اسأل مساعد MRX:", key="user_input")
+# 5. حقل الإدخال (تم تغييره ليكون متوافقاً تماماً)
+prompt = st.text_input("اكتب رسالتك هنا...", key="input_text")
 
 if st.button("إرسال"):
     if prompt:
+        # إضافة رسالة المستخدم
         st.session_state.messages.append({"role": "user", "content": prompt})
         
         # الاتصال بالـ API
@@ -43,15 +39,12 @@ if st.button("إرسال"):
                     "Content-Type": "application/json",
                     "Authorization": "Bearer exos_7d73425a42b9ebdbca982f04f84d0f267c2f720cf478a28c"
                 },
-                json={
-                    "message": prompt,
-                    "model": "deepseek-ai/DeepSeek-V3.1"
-                },
-                timeout=20
+                json={"message": prompt, "model": "deepseek-ai/DeepSeek-V3.1"}
             )
-            answer = response.text if response.status_code == 200 else "خطأ في الاتصال بالخادم."
+            answer = response.text if response.status_code == 200 else "خطأ في الاتصال."
         except:
-            answer = "عذراً، تعذر الوصول للسيرفر."
-
+            answer = "تعذر الوصول للخادم."
+        
+        # إضافة رد المساعد
         st.session_state.messages.append({"role": "assistant", "content": answer})
-        st.rerun() # تحديث الصفحة لعرض الرسالة الجديدة
+        st.rerun()
